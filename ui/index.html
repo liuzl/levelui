@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LevelUI</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <h1>LevelUI</h1>
+    </header>
+    <main>
+        <div id="app-container">
+            <nav id="db-nav">
+                <h2>Databases</h2>
+                <ul id="db-list">
+                    <!-- Database names will be dynamically injected here by script.js -->
+                </ul>
+            </nav>
+            <section id="db-view">
+                <div id="welcome-message">
+                    <p>Select a database from the left to begin.</p>
+                </div>
+                <div id="data-view" class="hidden">
+                    <h3 id="current-db-name"></h3>
+                    <!-- Key-value data and controls will be shown here -->
+                </div>
+            </section>
+        </div>
+    </main>
+    <script src="/script.js"></script>
+
+    <!-- Modal for viewing key-value pairs -->
+    <div id="view-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>View Key/Value</h2>
+                <button id="modal-close-btn" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="kv-pair">
+                    <label>Key</label>
+                    <pre id="modal-key"></pre>
+                </div>
+                <div class="kv-pair">
+                    <label>Value</label>
+                    <pre id="modal-value"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for adding/editing key-value pairs -->
+    <div id="edit-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="edit-modal-title">Add New Key/Value</h2>
+                <button id="edit-modal-close-btn" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-form">
+                    <div class="kv-pair">
+                        <label for="edit-key">Key</label>
+                        <textarea id="edit-key" rows="3" required></textarea>
+                    </div>
+                    <div class="kv-pair">
+                        <label for="edit-value">Value</label>
+                        <textarea id="edit-value" rows="8" required></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" id="save-kv-btn">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

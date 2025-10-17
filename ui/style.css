@@ -1,0 +1,290 @@
+:root {
+    --bg-color: #1e1e1e;
+    --text-color: #d4d4d4;
+    --primary-color: #007acc;
+    --border-color: #3c3c3c;
+    --nav-bg-color: #252526;
+    --hover-bg-color: #37373d;
+    --active-bg-color: #094771;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.5;
+    font-size: 16px;
+}
+
+header {
+    padding: 0.8rem 2rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--nav-bg-color);
+}
+
+header h1 {
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+main {
+    height: calc(100vh - 55px); /* Full height minus header */
+}
+
+#app-container {
+    display: flex;
+    height: 100%;
+}
+
+#db-nav {
+    flex-shrink: 0;
+    width: 280px;
+    background-color: var(--nav-bg-color);
+    border-right: 1px solid var(--border-color);
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+#db-nav h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #ccc;
+}
+
+#db-list {
+    list-style: none;
+}
+
+#db-list li {
+    padding: 0.7rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+#db-list li:hover {
+    background-color: var(--hover-bg-color);
+}
+
+#db-list li.active {
+    background-color: var(--active-bg-color);
+    color: white;
+}
+
+#db-view {
+    flex-grow: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.db-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-shrink: 0;
+}
+
+.db-header h3 {
+    font-size: 1.5rem;
+}
+
+.db-actions input {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 0.8rem;
+    border-radius: 4px;
+    margin-right: 0.5rem;
+}
+
+.db-actions button, .action-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.action-btn {
+    background-color: #3a3d41;
+    margin-right: 0.5rem;
+}
+
+.action-btn:hover {
+    background-color: var(--hover-bg-color);
+}
+
+#key-value-container {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.key-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.key-table th, .key-table td {
+    padding: 0.8rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.key-table th {
+    font-weight: 600;
+    background-color: var(--nav-bg-color);
+}
+
+.key-cell {
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pagination {
+    padding-top: 1.5rem;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.pagination button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1.2rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.pagination button:disabled {
+    background-color: var(--border-color);
+    cursor: not-allowed;
+}
+
+.empty-state {
+    color: #888;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: var(--nav-bg-color);
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    width: 80%;
+    max-width: 800px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.modal-header h2 {
+    font-size: 1.3rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.kv-pair {
+    margin-bottom: 1.5rem;
+}
+
+.kv-pair label {
+    display: block;
+    font-weight: 600;
+    color: #aaa;
+    margin-bottom: 0.5rem;
+}
+
+.kv-pair pre {
+    background-color: var(--bg-color);
+    padding: 1rem;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    white-space: pre-wrap;       /* Since CSS 2.1 */
+    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+.kv-pair textarea {
+    width: 100%;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 0.8rem;
+    border-radius: 4px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.95rem;
+}
+
+.modal-footer {
+    text-align: right;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.modal-footer button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+
+#welcome-message {
+    color: #888;
+    font-size: 1.2rem;
+}
+
+.hidden {
+    display: none;
+}
