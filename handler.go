@@ -112,10 +112,10 @@ func handleGetKeys(w http.ResponseWriter, r *http.Request, manager *Manager, dbN
 	iter = db.NewIterator(nil, &opt.ReadOptions{})
 	defer iter.Release()
 
-	if prefix != "" {
-		iter.Seek([]byte(prefix))
-	} else if startKey != "" {
+	if startKey != "" {
 		iter.Seek([]byte(startKey))
+	} else if prefix != "" {
+		iter.Seek([]byte(prefix))
 	} else {
 		iter.First()
 	}

@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalCloseBtn = document.getElementById('modal-close-btn');
     const modalKeyElement = document.getElementById('modal-key');
     const modalValueElement = document.getElementById('modal-value');
+    const editFromViewBtn = document.getElementById('edit-from-view-btn');
 
     const editModal = document.getElementById('edit-modal');
     const editModalCloseBtn = document.getElementById('edit-modal-close-btn');
@@ -19,6 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeDb = null;
     let activeDbLiElement = null;
     let searchDebounceTimer;
+    let isEditMode = false;
+    let editingKey = null;
 
     // --- Event Listeners ---
     if (modal && modalCloseBtn) {
@@ -29,14 +32,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (editModal && editModalCloseBtn) {
-        editModalCloseBtn.addEventListener('click', () => editModal.classList.add('hidden'));
+        editModalCloseBtn.addEventListener('click', () => {
+            editModal.classList.add('hidden');
+            resetEditState();
+        });
         editModal.addEventListener('click', (e) => {
-            if (e.target === editModal) editModal.classList.add('hidden');
+            if (e.target === editModal) {
+                editModal.classList.add('hidden');
+                resetEditState();
+            }
         });
     }
 
     if (editForm) {
         editForm.addEventListener('submit', handleSetKey);
+    }
+
+    if (editFromViewBtn) {
+        editFromViewBtn.addEventListener('click', handleEditFromView);
     }
 
     // --- Core Functions ---
@@ -87,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const response = await fetch(url);
             if (!response.ok) throw new Error(`API response was not ok: ${response.statusText}`);
-            
+
             const data = await response.json();
             renderKeyView(dbName, data.keys || [], data.next_key, options.prefix);
         } catch (error) {
@@ -148,6 +161,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('edit-modal-title').textContent = 'Add New Key/Value';
             editForm.reset();
             editKeyElement.disabled = false;
+            isEditMode = false;
+            editingKey = null;
             editModal.classList.remove('hidden');
         });
 
@@ -176,7 +191,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.status === 201) {
                 editModal.classList.add('hidden');
-                fetchAndDisplayKeys(activeDb, { prefix: document.getElementById('search-key-input').value });
+                const searchPrefix = document.getElementById('search-key-input')?.value || '';
+                fetchAndDisplayKeys(activeDb, { prefix: searchPrefix });
+
+                // Reset edit state
+                isEditMode = false;
+                editingKey = null;
+                editKeyElement.disabled = false;
             } else {
                 throw new Error(`API Error: ${response.status} ${await response.text()}`);
             }
@@ -193,7 +214,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`/api/db/${dbName}/key/${encodeURIComponent(key)}`, { method: 'DELETE' });
 
             if (response.status === 204) {
-                buttonElement.closest('tr')?.remove();
+                // Refresh the key list to ensure consistency
+                const searchPrefix = document.getElementById('search-key-input')?.value || '';
+                fetchAndDisplayKeys(dbName, { prefix: searchPrefix });
             } else {
                 throw new Error(`API Error: ${response.status} ${await response.text()}`);
             }
@@ -207,15 +230,44 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`/api/db/${dbName}/key/${encodeURIComponent(key)}`);
             if (!response.ok) throw new Error(`API Error: ${response.status} ${await response.text()}`);
-            
+
             const data = await response.json();
             modalKeyElement.textContent = data.key;
             modalValueElement.textContent = data.value;
+            editingKey = data.key;
             modal.classList.remove('hidden');
         } catch (error) {
             console.error('Error fetching key value:', error);
             alert('Could not load key value. See console for details.');
         }
+    }
+
+    function handleEditFromView() {
+        if (!editingKey || !activeDb) return;
+
+        // Switch to edit mode
+        modal.classList.add('hidden');
+        editModal.classList.remove('hidden');
+
+        // Update modal title for edit mode
+        document.getElementById('edit-modal-title').textContent = 'Edit Key/Value';
+
+        // Populate edit form with current values
+        editKeyElement.value = editingKey;
+        editValueElement.value = modalValueElement.textContent;
+
+        // Disable key editing for existing keys (to maintain consistency)
+        editKeyElement.disabled = true;
+
+        isEditMode = true;
+    }
+
+    function resetEditState() {
+        isEditMode = false;
+        editingKey = null;
+        editKeyElement.disabled = false;
+        document.getElementById('edit-modal-title').textContent = 'Add New Key/Value';
+        editForm.reset();
     }
 
     // --- Utility Functions ---
