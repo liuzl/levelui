@@ -23,6 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let isEditMode = false;
     let editingKey = null;
 
+    // Pagination state
+    let paginationHistory = [];
+    let currentStartKey = null;
+    let currentPrefix = '';
+
     // --- Event Listeners ---
     if (modal && modalCloseBtn) {
         modalCloseBtn.addEventListener('click', () => modal.classList.add('hidden'));
@@ -81,14 +86,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleDbSelection(dbName, liElement) {
         if (activeDbLiElement) activeDbLiElement.classList.remove('active');
-        
+
         liElement.classList.add('active');
         activeDb = dbName;
         activeDbLiElement = liElement;
 
         welcomeMessageElement.classList.add('hidden');
         dataViewElement.classList.remove('hidden');
-        
+
+        // Reset pagination state
+        paginationHistory = [];
+        currentStartKey = null;
+        currentPrefix = '';
+
         fetchAndDisplayKeys(dbName);
     }
 
@@ -98,18 +108,38 @@ document.addEventListener('DOMContentLoaded', () => {
             if (options.startKey) url.searchParams.append('start', options.startKey);
             if (options.prefix) url.searchParams.append('prefix', options.prefix);
 
+            // Update pagination state
+            const newPrefix = options.prefix || '';
+            const newStartKey = options.startKey || null;
+
+            // Only add to history if we're moving forward (not going back)
+            if (newPrefix === currentPrefix && newStartKey && newStartKey !== currentStartKey) {
+                // Check if we're moving forward to a new page
+                const isInHistory = paginationHistory.some(item => item.startKey === newStartKey);
+                if (!isInHistory) {
+                    paginationHistory.push({ startKey: currentStartKey, prefix: currentPrefix });
+                }
+            } else if (newPrefix !== currentPrefix) {
+                // Prefix changed, reset history
+                paginationHistory = [];
+                currentStartKey = null;
+            }
+
+            currentPrefix = newPrefix;
+            currentStartKey = newStartKey;
+
             const response = await fetch(url);
             if (!response.ok) throw new Error(`API response was not ok: ${response.statusText}`);
 
             const data = await response.json();
-            renderKeyView(dbName, data.keys || [], data.next_key, options.prefix);
+            renderKeyView(dbName, data.keys || [], data.next_key, newPrefix, options.startKey);
         } catch (error) {
             console.error(`Error fetching keys for ${dbName}:`, error);
             if (dataViewElement) dataViewElement.innerHTML = `<p style="color: #ff5555;">Error loading keys.</p>`;
         }
     }
 
-    function renderKeyView(dbName, keys, nextKey, currentPrefix = '') {
+    function renderKeyView(dbName, keys, nextKey, currentPrefix = '', startKey = null) {
         let keyTableHTML = '<p class="empty-state">No keys found.</p>';
         if (keys.length > 0) {
             keyTableHTML = `
@@ -128,6 +158,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </table>`;
         }
 
+        // Determine if Previous button should be enabled
+        const hasPrevious = paginationHistory.length > 0;
+
         dataViewElement.innerHTML = `
             <div class="db-header">
                  <h3>${dbName}</h3>
@@ -138,10 +171,21 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div id="key-value-container">${keyTableHTML}</div>
             <div class="pagination">
+                <button id="prev-page-btn" ${!hasPrevious ? 'disabled' : ''}>← Previous</button>
                 <button id="next-page-btn" ${!nextKey ? 'disabled' : ''}>Next →</button>
             </div>`;
 
         // Add event listeners for the newly rendered content
+        const prevBtn = document.getElementById('prev-page-btn');
+        if (prevBtn && paginationHistory.length > 0) {
+            prevBtn.addEventListener('click', () => {
+                const previousPage = paginationHistory.pop();
+                currentStartKey = previousPage.startKey;
+                currentPrefix = previousPage.prefix;
+                fetchAndDisplayKeys(dbName, { startKey: previousPage.startKey, prefix: previousPage.prefix });
+            });
+        }
+
         const nextBtn = document.getElementById('next-page-btn');
         if (nextBtn && nextKey) {
             nextBtn.addEventListener('click', () => fetchAndDisplayKeys(dbName, { startKey: nextKey, prefix: currentPrefix }));
@@ -152,6 +196,9 @@ document.addEventListener('DOMContentLoaded', () => {
             searchInput.addEventListener('input', (e) => {
                 clearTimeout(searchDebounceTimer);
                 searchDebounceTimer = setTimeout(() => {
+                    // Reset pagination when searching
+                    paginationHistory = [];
+                    currentStartKey = null;
                     fetchAndDisplayKeys(dbName, { prefix: e.target.value });
                 }, 300);
             });
@@ -192,6 +239,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.status === 201) {
                 editModal.classList.add('hidden');
                 const searchPrefix = document.getElementById('search-key-input')?.value || '';
+
+                // Reset pagination when adding new keys
+                paginationHistory = [];
+                currentStartKey = null;
                 fetchAndDisplayKeys(activeDb, { prefix: searchPrefix });
 
                 // Reset edit state
@@ -216,6 +267,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.status === 204) {
                 // Refresh the key list to ensure consistency
                 const searchPrefix = document.getElementById('search-key-input')?.value || '';
+
+                // Reset pagination when deleting keys
+                paginationHistory = [];
+                currentStartKey = null;
                 fetchAndDisplayKeys(dbName, { prefix: searchPrefix });
             } else {
                 throw new Error(`API Error: ${response.status} ${await response.text()}`);

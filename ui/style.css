@@ -159,8 +159,11 @@ main {
 
 .pagination {
     padding-top: 1.5rem;
-    text-align: right;
+    text-align: center;
     flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
 }
 
 .pagination button {
@@ -170,11 +173,17 @@ main {
     padding: 0.5rem 1.2rem;
     border-radius: 4px;
     cursor: pointer;
+    flex: 1;
+    max-width: 150px;
 }
 
 .pagination button:disabled {
     background-color: var(--border-color);
     cursor: not-allowed;
+}
+
+.pagination button:hover:not(:disabled) {
+    background-color: #005a9e;
 }
 
 .empty-state {
