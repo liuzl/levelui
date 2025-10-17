@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -24,12 +25,21 @@ func NewHandler(manager *Manager) http.Handler {
 	mux.HandleFunc("/api/dbs", handleGetDBs(manager))
 	mux.HandleFunc("/api/db/", handleDB(manager))
 
-	strippedFS, err := fs.Sub(uiFS, "ui")
-	if err != nil {
-		log.Fatalf("failed to create sub file system for embedded UI: %v", err)
+	// Auto-dev mode: if a 'ui' directory exists locally, serve from it.
+	// Otherwise, serve from the embedded filesystem.
+	var staticFS http.Handler
+	if _, err := os.Stat("ui"); err == nil {
+		log.Println("Serving UI from local 'ui' directory (dev mode).")
+		staticFS = http.FileServer(http.Dir("ui"))
+	} else {
+		log.Println("Serving UI from embedded filesystem.")
+		strippedFS, err := fs.Sub(uiFS, "ui")
+		if err != nil {
+			log.Fatalf("failed to create sub file system for embedded UI: %v", err)
+		}
+		staticFS = http.FileServer(http.FS(strippedFS))
 	}
-	fileServer := http.FileServer(http.FS(strippedFS))
-	mux.Handle("/", fileServer)
+	mux.Handle("/", staticFS)
 
 	return mux
 }

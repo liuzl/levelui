@@ -26,9 +26,9 @@ func main() {
 		if parts := strings.SplitN(pair, ":", 2); len(parts) == 2 {
 			name, path := parts[0], parts[1]
 			if err := manager.Register(name, path); err != nil {
-				log.Fatalf("Failed to register db \"%s\" at \"%s\": %v", name, path, err)
+				log.Fatalf("Failed to register db '%s' at '%s': %v", name, path, err)
 			}
-			log.Printf("Registered database \"%s\" from path: %s", name, path)
+			log.Printf("Registered database '%s' from path: %s", name, path)
 		}
 	}
 

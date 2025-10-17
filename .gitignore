@@ -15,4 +15,4 @@
 go.work
 
 # Local binary
-levelui-server
+/levelui-server
