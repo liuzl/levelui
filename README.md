@@ -47,16 +47,18 @@ A simple, self-contained, and embeddable web UI for managing `goleveldb` instanc
 
 ### Using as a Library
 
-You can easily embed the LevelUI into your own Go application.
+You can easily embed the LevelUI into your own Go application. The `Manager` allows you to register database files for LevelUI to manage, or add already-opened `*leveldb.DB` instances that your main application manages.
 
-1.  **Import the library:**
-    ```go
-    import "github.com/liuzl/levelui"
+1.  **Get the library:**
+    ```bash
+    go get github.com/liuzl/levelui
     ```
 
-2.  **Create a manager, register your DB, and mount the handler:**
+2.  **Integrate with your `http.Server`:**
+    Below is a complete example of an application that runs its own web server and integrates LevelUI on the `/admin/` path.
 
     ```go
+    // example.go
     package main
 
     import (
@@ -68,37 +70,46 @@ You can easily embed the LevelUI into your own Go application.
     )
 
     func main() {
-    	// Assume you already have your own LevelDB instance(s)
-    	myAppDB, err := leveldb.OpenFile("/path/to/my/app.db", nil)
+    	// 1. Assume your app already has an open LevelDB instance.
+    	//    Your application is responsible for its lifecycle (e.g., closing it).
+    	appDB, err := leveldb.OpenFile("/tmp/my_app.db", nil)
     	if err != nil {
-    		log.Fatalf("Failed to open my app DB: %v", err)
+    		log.Fatalf("Failed to open app.db: %v", err)
     	}
-    	// Note: The manager does not take ownership or close the DB in this case.
-    	// You are responsible for the DB's lifecycle.
+    	defer appDB.Close() // Your app manages this DB's lifecycle.
 
-    	// 1. Create a LevelUI manager
+    	// 2. Create a new LevelUI Manager.
     	uiManager := levelui.NewManager()
 
-    	// 2. (Optional) You can still use Register to let LevelUI open files
-    	if err := uiManager.Register("another_db", "/tmp/another.db"); err != nil {
-    		log.Fatalf("Failed to register another_db: %v", err)
+    	// 3. Use the .Add() method to register your existing DB instance.
+    	//    The manager will NOT close this DB instance.
+    	if err := uiManager.Add("my_application_db", appDB); err != nil {
+    		log.Fatalf("Failed to add db to manager: %v", err)
     	}
-    	defer uiManager.Close() // This will close "another_db"
 
-    	// 3. Create the UI handler
+    	// 4. Create the LevelUI HTTP Handler.
     	uiHandler := levelui.NewHandler(uiManager)
 
-    	// 4. Mount it in your application's router
+    	// 5. Create your app's router and mount the UI handler on a sub-path.
     	mux := http.NewServeMux()
-    	mux.Handle("/levelui/", http.StripPrefix("/levelui", uiHandler))
+    	mux.Handle("/admin/", http.StripPrefix("/admin", uiHandler))
 
-    	// Your application's other routes
+    	// 6. Add your application's own routes.
     	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-    		w.Write([]byte("<h1>My Awesome App</h1><a href=\"/levelui/\">Manage Database</a>"))
+    		w.Header().Set("Content-Type", "text/html")
+    		w.Write([]byte(`
+    			<h1>My Awesome App</h1>
+    			<p>Welcome to the main application.</p>
+    			<p><a href="/admin/">Click here to manage the database</a></p>
+    		`))
     	})
 
-    	log.Println("Starting server on :8080...")
-    	http.ListenAndServe(":8080", mux)
+    	// 7. Start the server.
+    	log.Println("My application server is starting on :8080")
+    	log.Println("LevelUI is available at http://localhost:8080/admin/")
+    	if err := http.ListenAndServe(":8080", mux); err != nil {
+    		log.Fatalf("Failed to start server: %v", err)
+    	}
     }
     ```
 
