@@ -3,22 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="LevelUI – A lightweight LevelDB browser UI">
+    <meta name="color-scheme" content="dark light">
+    <meta name="theme-color" content="#1e1e1e">
     <title>LevelUI</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+      /* Only reveal skip link when focused for keyboard users */
+      .skip-link:focus { 
+        position: static !important; left: auto !important; top: auto !important; 
+        width: auto !important; height: auto !important; overflow: visible !important;
+        display: inline-block; padding: 0.4rem 0.75rem; background: #ffffff; color: #000; 
+        border-radius: 4px; margin: 0.5rem; z-index: 1001;
+      }
+    </style>
 </head>
 <body>
+    <a href="#main-content" class="skip-link" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Skip to content</a>
     <header>
         <h1>LevelUI</h1>
     </header>
-    <main>
+    <main id="main-content" role="main">
         <div id="app-container">
-            <nav id="db-nav">
+            <nav id="db-nav" aria-label="Databases">
                 <h2>Databases</h2>
                 <ul id="db-list">
                     <!-- Database names will be dynamically injected here by script.js -->
                 </ul>
             </nav>
-            <section id="db-view">
+            <section id="db-view" aria-live="polite">
                 <div id="welcome-message">
                     <p>Select a database from the left to begin.</p>
                 </div>
@@ -29,14 +42,21 @@
             </section>
         </div>
     </main>
-    <script src="/script.js"></script>
+
+    <noscript>
+        <div style="padding:1rem;background:#fffae6;color:#333;border-top:1px solid #e0e0e0;">
+            JavaScript is required for LevelUI to function.
+        </div>
+    </noscript>
+
+    <script src="script.js" defer></script>
 
     <!-- Modal for viewing key-value pairs -->
-    <div id="view-modal" class="modal-overlay hidden">
-        <div class="modal-content">
+    <div id="view-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="view-modal-title">
+        <div class="modal-content" tabindex="-1">
             <div class="modal-header">
-                <h2>View Key/Value</h2>
-                <button id="modal-close-btn" class="modal-close">&times;</button>
+                <h2 id="view-modal-title">View Key/Value</h2>
+                <button id="modal-close-btn" class="modal-close" type="button" aria-label="Close dialog">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="kv-pair">
@@ -55,14 +75,14 @@
     </div>
 
     <!-- Modal for adding/editing key-value pairs -->
-    <div id="edit-modal" class="modal-overlay hidden">
-        <div class="modal-content">
+    <div id="edit-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+        <div class="modal-content" tabindex="-1">
             <div class="modal-header">
                 <h2 id="edit-modal-title">Add New Key/Value</h2>
-                <button id="edit-modal-close-btn" class="modal-close">&times;</button>
+                <button id="edit-modal-close-btn" class="modal-close" type="button" aria-label="Close dialog">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="edit-form">
+                <form id="edit-form" autocomplete="off">
                     <div class="kv-pair">
                         <label for="edit-key">Key</label>
                         <textarea id="edit-key" rows="3" required></textarea>

@@ -15,4 +15,6 @@
 go.work
 
 # Local binary
-/levelui-server
+./levelui-server
+cmd/levelui-server/levelui-server
+*.db
