@@ -64,12 +64,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (confirmModal) {
-        confirmModalCloseBtn.addEventListener('click', () => confirmModal.classList.add('hidden'));
-        confirmCancelBtn.addEventListener('click', () => confirmModal.classList.add('hidden'));
+        confirmModalCloseBtn.addEventListener('click', () => {
+            confirmModal.classList.add('hidden');
+            confirmDeleteBtn.onclick = null; // Clear the handler
+        });
+        confirmCancelBtn.addEventListener('click', () => {
+            confirmModal.classList.add('hidden');
+            confirmDeleteBtn.onclick = null; // Clear the handler
+        });
         confirmModal.addEventListener('click', (e) => {
             if (e.target === confirmModal) {
                 confirmModal.classList.add('hidden');
                 confirmDeleteBtn.onclick = null; // Clear the handler
+            }
+        });
+
+        // Add keyboard support
+        confirmModal.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                confirmModal.classList.add('hidden');
+                confirmDeleteBtn.onclick = null; // Clear the handler
+            } else if (e.key === 'Enter' && confirmDeleteBtn.onclick) {
+                // Only trigger delete if Enter is pressed and there's an active handler
+                confirmDeleteBtn.click();
             }
         });
     }
@@ -282,8 +299,15 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmModalText.textContent = `Are you sure you want to delete the key "${key}"? This action cannot be undone.`;
         confirmModal.classList.remove('hidden');
 
+        // Focus the cancel button for better accessibility
+        setTimeout(() => confirmCancelBtn.focus(), 100);
+
         confirmDeleteBtn.onclick = async () => {
             try {
+                // Add loading state
+                confirmDeleteBtn.disabled = true;
+                confirmDeleteBtn.textContent = 'Deleting...';
+
                 const response = await fetch(`/api/db/${dbName}/key/${encodeURIComponent(key)}`, { method: 'DELETE' });
 
                 if (response.status === 204) {
@@ -296,6 +320,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error deleting key:', error);
                 alert('Could not delete key. See console for details.');
             } finally {
+                // Reset button state
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.textContent = 'Delete';
                 confirmModal.classList.add('hidden');
             }
         };
