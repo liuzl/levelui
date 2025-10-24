@@ -21,7 +21,7 @@ func main() {
 	manager := levelui.NewManager()
 	defer manager.Close()
 
-	for _, pair := range strings.Split(*dbsStr, ",") {
+	for pair := range strings.SplitSeq(*dbsStr, ",") {
 		pair = strings.TrimSpace(pair)
 		if parts := strings.SplitN(pair, ":", 2); len(parts) == 2 {
 			name, path := parts[0], parts[1]
