@@ -124,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = new URL(`/api/db/${dbName}/keys`, window.location.origin);
             if (options.startKey) url.searchParams.append('start', options.startKey);
             if (options.prefix) url.searchParams.append('prefix', options.prefix);
+            console.log(`[DEBUG] Fetching keys with URL: ${url}`);
 
             // Update pagination state
             const newPrefix = options.prefix || '';
@@ -149,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error(`API response was not ok: ${response.statusText}`);
 
             const data = await response.json();
+            console.log(`[DEBUG] Received data.keys.length: ${data.keys ? data.keys.length : 'null'}`);
             renderKeyView(dbName, data.keys || [], data.next_key, newPrefix, options.startKey);
         } catch (error) {
             console.error(`Error fetching keys for ${dbName}:`, error);
@@ -211,9 +213,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('search-key-input');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
+                console.log(`[DEBUG] Input event. activeDb: ${activeDb}, searchValue: "${e.target.value}"`);
                 clearTimeout(searchDebounceTimer);
                 searchDebounceTimer = setTimeout(() => {
-                    // Reset pagination when searching
+                    if (!activeDb) return;
                     paginationHistory = [];
                     currentStartKey = null;
                     fetchAndDisplayKeys(dbName, { prefix: e.target.value });
