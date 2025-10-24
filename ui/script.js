@@ -194,6 +194,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 </table>`;
         }
 
+        // Get current search input value, focus state, and cursor position before rebuilding
+        const searchInput = document.getElementById('search-key-input');
+        const searchInputValue = searchInput ? searchInput.value : (currentPrefix || '');
+        const searchInputFocused = searchInput && document.activeElement === searchInput;
+        const searchCursorPosition = searchInput ? searchInput.selectionStart : 0;
+
         // Determine if Previous button should be enabled
         const hasPrevious = paginationHistory.length > 0;
 
@@ -201,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="db-header">
                  <h3>${dbName}</h3>
                  <div class="db-actions">
-                    <input type="text" id="search-key-input" placeholder="Search by key prefix..." value="${escapeHTML(currentPrefix || '')}">
+                    <input type="text" id="search-key-input" placeholder="Search by key prefix..." value="${escapeHTML(searchInputValue)}">
                     <button id="add-key-btn">Add Key</button>
                  </div>
             </div>
@@ -227,9 +233,18 @@ document.addEventListener('DOMContentLoaded', () => {
             nextBtn.addEventListener('click', () => fetchAndDisplayKeys(dbName, { startKey: nextKey, prefix: currentPrefix }));
         }
 
-        const searchInput = document.getElementById('search-key-input');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
+        const newSearchInput = document.getElementById('search-key-input');
+        if (newSearchInput) {
+            // Restore focus if it was focused before
+            if (searchInputFocused) {
+                setTimeout(() => {
+                    newSearchInput.focus();
+                    // Restore cursor position
+                    newSearchInput.setSelectionRange(searchCursorPosition, searchCursorPosition);
+                }, 0);
+            }
+
+            newSearchInput.addEventListener('input', (e) => {
                 console.log(`[DEBUG] Input event. activeDb: ${activeDb}, searchValue: "${e.target.value}"`);
                 clearTimeout(searchDebounceTimer);
                 searchDebounceTimer = setTimeout(() => {
