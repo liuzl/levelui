@@ -8,27 +8,28 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 
 	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 )
 
 //go:embed all:ui
 var uiFS embed.FS
 
-func NewHandler(manager *Manager) http.Handler {
+func NewHandler(manager *Manager, opts ...bool) http.Handler {
+	debug := false
+	if len(opts) > 0 && opts[0] {
+		debug = true
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/dbs", handleGetDBs(manager))
 	mux.HandleFunc("/api/db/", handleDB(manager))
 
-	// Auto-dev mode: if a 'ui' directory exists locally, serve from it.
-	// Otherwise, serve from the embedded filesystem.
 	var staticFS http.Handler
-	if _, err := os.Stat("ui"); err == nil {
+	if debug {
 		log.Println("Serving UI from local 'ui' directory (dev mode).")
 		staticFS = http.FileServer(http.Dir("ui"))
 	} else {
@@ -108,8 +109,7 @@ func handleGetKeys(w http.ResponseWriter, r *http.Request, manager *Manager, dbN
 
 	keys := make([][]byte, 0, limit)
 	var nextKey []byte
-	var iter iterator.Iterator
-	iter = db.NewIterator(nil, &opt.ReadOptions{})
+	iter := db.NewIterator(nil, &opt.ReadOptions{})
 	defer iter.Release()
 
 	if startKey != "" {
@@ -126,7 +126,7 @@ func handleGetKeys(w http.ResponseWriter, r *http.Request, manager *Manager, dbN
 		if prefix != "" && !strings.HasPrefix(string(key), prefix) {
 			break // Stop iterating if we've moved past the prefix
 		}
-		
+
 		copiedKey := make([]byte, len(key))
 		copy(copiedKey, key)
 		keys = append(keys, copiedKey)

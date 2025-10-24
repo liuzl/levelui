@@ -12,6 +12,7 @@ import (
 func main() {
 	listenAddr := flag.String("listen", ":8080", "Address to listen on")
 	dbsStr := flag.String("dbs", "", "Comma-separated list of databases. Format: <name>:<path>,<name2>:<path2>")
+	devMode := flag.Bool("dev", false, "Enable dev mode for UI")
 	flag.Parse()
 
 	if *dbsStr == "" {
@@ -32,7 +33,7 @@ func main() {
 		}
 	}
 
-	handler := levelui.NewHandler(manager)
+	handler := levelui.NewHandler(manager, *devMode)
 	log.Printf("LevelUI server starting on %s", *listenAddr)
 	if err := http.ListenAndServe(*listenAddr, handler); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
