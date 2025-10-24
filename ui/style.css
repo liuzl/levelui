@@ -145,6 +145,13 @@ main {
     border-bottom: 1px solid var(--border-color);
 }
 
+/* Actions column specific styles */
+.key-table th:last-child,
+.key-table td:last-child {
+    text-align: right;
+    white-space: nowrap;
+}
+
 .key-table th {
     font-weight: 600;
     background-color: var(--nav-bg-color);
