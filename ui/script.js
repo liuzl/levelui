@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const dbListElement = document.getElementById('db-list');
     const welcomeMessageElement = document.getElementById('welcome-message');
     const dataViewElement = document.getElementById('data-view');
+    const dbNav = document.getElementById('db-nav');
+    const dbNavToggle = document.getElementById('db-nav-toggle');
     
     const modal = document.getElementById('view-modal');
     const modalCloseBtn = document.getElementById('modal-close-btn');
@@ -35,6 +37,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPrefix = '';
 
     // --- Event Listeners ---
+    if (dbNavToggle && dbNav) {
+        dbNavToggle.addEventListener('click', () => {
+            dbNav.classList.toggle('collapsed');
+        });
+    }
+
     if (modal && modalCloseBtn) {
         modalCloseBtn.addEventListener('click', () => modal.classList.add('hidden'));
         modal.addEventListener('click', (e) => {
