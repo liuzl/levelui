@@ -7,7 +7,7 @@
     <meta name="color-scheme" content="dark light">
     <meta name="theme-color" content="#1e1e1e">
     <title>LevelUI</title>
-    <link rel="stylesheet" href="style.css?v=1.0.3">
+    <link rel="stylesheet" href="style.css?v=1.0.5">
     <style>
       /* Only reveal skip link when focused for keyboard users */
       .skip-link:focus { 
@@ -26,7 +26,12 @@
     <main id="main-content" role="main">
         <div id="app-container">
             <nav id="db-nav" aria-label="Databases">
-                <h2>Databases</h2>
+                <div class="db-nav-header">
+                    <h2>Databases</h2>
+                    <button id="db-nav-toggle" class="nav-toggle-btn" aria-label="Toggle databases list" title="Toggle databases list">
+                        <span class="toggle-icon">«</span>
+                    </button>
+                </div>
                 <ul id="db-list">
                     <!-- Database names will be dynamically injected here by script.js -->
                 </ul>
@@ -49,7 +54,7 @@
         </div>
     </noscript>
 
-    <script src="script.js?v=1.0.1" defer></script>
+    <script src="script.js?v=1.0.3" defer></script>
 
     <!-- Modal for viewing key-value pairs -->
     <div id="view-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="view-modal-title">
