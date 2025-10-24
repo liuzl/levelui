@@ -18,3 +18,5 @@ go.work
 ./levelui-server
 cmd/levelui-server/levelui-server
 *.db
+.claude
+.gemini-clipboard
