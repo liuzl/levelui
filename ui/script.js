@@ -186,8 +186,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <tr>
                                 <td class="key-cell" title="${escapeHTML(keyStr)}">${escapeHTML(keyStr)}</td>
                                 <td>
-                                    <button class="action-btn" data-action="view" data-db="${dbName}" data-key="${escapeHTML(keyStr)}">View</button>
-                                    <button class="action-btn" data-action="delete" data-db="${dbName}" data-key="${escapeHTML(keyStr)}">Delete</button>
+                                    <button class="action-btn" data-action="view" data-db="${dbName}" data-key="${escapeHTML(keyStr)}" title="View key"></button>
+                                    <button class="action-btn" data-action="delete" data-db="${dbName}" data-key="${escapeHTML(keyStr)}" title="Delete key"></button>
                                 </td>
                             </tr>`).join('')}
                     </tbody>

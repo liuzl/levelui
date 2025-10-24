@@ -120,13 +120,96 @@ main {
     font-weight: 500;
 }
 
+/* Action buttons redesign */
 .action-btn {
     background-color: #3a3d41;
     margin-right: 0.5rem;
+    border: 1px solid transparent;
+    transition: all 0.2s ease-in-out;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
 }
 
 .action-btn:hover {
     background-color: var(--hover-bg-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+/* Specific button styles */
+.action-btn[data-action="view"] {
+    background-color: #2e7d32;
+    color: white;
+}
+
+.action-btn[data-action="view"]:hover {
+    background-color: #1b5e20;
+    border-color: #4caf50;
+}
+
+.action-btn[data-action="delete"] {
+    background-color: #c62828;
+    color: white;
+}
+
+.action-btn[data-action="delete"]:hover {
+    background-color: #b71c1c;
+    border-color: #f44336;
+}
+
+/* Button icons (using Unicode characters) */
+.action-btn {
+    position: relative;
+    padding: 0.5rem;
+    min-width: 40px;
+    justify-content: center;
+}
+
+.action-btn::before {
+    font-size: 1rem;
+}
+
+.action-btn span {
+    display: none; /* Hide text, only show icons */
+}
+
+.action-btn[data-action="view"]::before {
+    content: "👁️";
+}
+
+.action-btn[data-action="delete"]::before {
+    content: "🗑️";
+}
+
+/* Tooltip for accessibility */
+.action-btn::after {
+    content: attr(data-action);
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+    z-index: 100;
+}
+
+.action-btn:hover::after {
+    opacity: 1;
 }
 
 #key-value-container {
