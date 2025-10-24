@@ -16,6 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const editKeyElement = document.getElementById('edit-key');
     const editValueElement = document.getElementById('edit-value');
 
+    const confirmModal = document.getElementById('confirm-modal');
+    const confirmModalCloseBtn = document.getElementById('confirm-modal-close-btn');
+    const confirmModalText = document.getElementById('confirm-modal-text');
+    const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+
     // --- State ---
     let activeDb = null;
     let activeDbLiElement = null;
@@ -55,6 +61,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (editFromViewBtn) {
         editFromViewBtn.addEventListener('click', handleEditFromView);
+    }
+
+    if (confirmModal) {
+        confirmModalCloseBtn.addEventListener('click', () => confirmModal.classList.add('hidden'));
+        confirmCancelBtn.addEventListener('click', () => confirmModal.classList.add('hidden'));
+        confirmModal.addEventListener('click', (e) => {
+            if (e.target === confirmModal) {
+                confirmModal.classList.add('hidden');
+                confirmDeleteBtn.onclick = null; // Clear the handler
+            }
+        });
     }
 
     // --- Core Functions ---
@@ -259,26 +276,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleDeleteKey(dbName, key, buttonElement) {
-        if (!confirm(`Are you sure you want to delete the key "${key}"?`)) return;
+        confirmModalText.textContent = `Are you sure you want to delete the key "${key}"? This action cannot be undone.`;
+        confirmModal.classList.remove('hidden');
 
-        try {
-            const response = await fetch(`/api/db/${dbName}/key/${encodeURIComponent(key)}`, { method: 'DELETE' });
+        confirmDeleteBtn.onclick = async () => {
+            try {
+                const response = await fetch(`/api/db/${dbName}/key/${encodeURIComponent(key)}`, { method: 'DELETE' });
 
-            if (response.status === 204) {
-                // Refresh the key list to ensure consistency
-                const searchPrefix = document.getElementById('search-key-input')?.value || '';
-
-                // Reset pagination when deleting keys
-                paginationHistory = [];
-                currentStartKey = null;
-                fetchAndDisplayKeys(dbName, { prefix: searchPrefix });
-            } else {
-                throw new Error(`API Error: ${response.status} ${await response.text()}`);
+                if (response.status === 204) {
+                    const row = buttonElement.closest('tr');
+                    if (row) row.remove();
+                } else {
+                    throw new Error(`API Error: ${response.status} ${await response.text()}`);
+                }
+            } catch (error) {
+                console.error('Error deleting key:', error);
+                alert('Could not delete key. See console for details.');
+            } finally {
+                confirmModal.classList.add('hidden');
             }
-        } catch (error) {
-            console.error('Error deleting key:', error);
-            alert('Could not delete key. See console for details.');
-        }
+        };
     }
 
     async function handleViewKey(dbName, key) {

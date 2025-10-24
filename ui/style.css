@@ -271,6 +271,9 @@ main {
 }
 
 .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
     text-align: right;
     margin-top: 1.5rem;
     padding-top: 1rem;
@@ -295,6 +298,14 @@ main {
 
 .secondary-btn:hover {
     background-color: var(--hover-bg-color) !important;
+}
+
+.danger-btn {
+    background-color: #da3a3a !important;
+    color: white !important;
+}
+.danger-btn:hover {
+    background-color: #b82e2e !important;
 }
 
 
