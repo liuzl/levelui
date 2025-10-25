@@ -163,6 +163,7 @@ main {
     align-items: center;
     gap: 1rem;
     margin-bottom: 8px;
+    margin-left: 30px;
     flex-shrink: 0;
 }
 
