@@ -153,7 +153,7 @@ main {
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     flex-shrink: 0;
 }
 
@@ -167,7 +167,7 @@ main {
     display: flex;
     align-items: center;
     gap: 8px;
-    width: 100%;
+    flex-grow: 1;
 }
 
 .db-actions input {
@@ -185,7 +185,7 @@ main {
     box-shadow: 0 0 0 1px var(--primary-color);
 }
 
-.db-actions button, .action-btn {
+.db-actions button {
     background-color: var(--primary-color);
     color: white;
     border: none;
@@ -194,6 +194,24 @@ main {
     cursor: pointer;
     font-weight: 500;
     white-space: nowrap;
+}
+
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    background-color: var(--nav-bg-color);
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.table-label {
+    font-weight: 600;
+    color: #5f6368;
+    font-size: 0.85rem;
 }
 
 /* Action buttons in table */
@@ -230,7 +248,9 @@ main {
     flex-grow: 1;
     overflow-y: auto;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-top: none;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
@@ -239,7 +259,7 @@ main {
     border-collapse: collapse;
 }
 
-.key-table th, .key-table td {
+.key-table td {
     padding: 6px 12px;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
@@ -249,19 +269,10 @@ main {
     border-bottom: none;
 }
 
-.key-table th:last-child,
 .key-table td:last-child {
     text-align: right;
     white-space: nowrap;
     width: 1%;
-}
-
-.key-table th {
-    font-weight: 600;
-    background-color: var(--nav-bg-color);
-    position: sticky;
-    top: 0;
-    z-index: 1;
 }
 
 .key-table tbody tr:hover td {
@@ -282,6 +293,15 @@ main {
     display: flex;
     justify-content: center;
     gap: 0.5rem;
+}
+
+.pagination-top {
+    padding-top: 0;
+    gap: 4px;
+}
+
+.pagination-top button {
+    padding: 2px 8px;
 }
 
 .pagination button {

@@ -188,7 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (keys.length > 0) {
             keyTableHTML = `
                 <table class="key-table">
-                    <thead><tr><th>Key</th><th>Actions</th></tr></thead>
                     <tbody>
                         ${keys.map(keyStr => `
                             <tr>
@@ -211,35 +210,50 @@ document.addEventListener('DOMContentLoaded', () => {
         // Determine if Previous button should be enabled
         const hasPrevious = paginationHistory.length > 0;
 
-        dataViewElement.innerHTML = `
-            <div class="db-header">
-                 <h3>${dbName}</h3>
-                 <div class="db-actions">
-                    <input type="text" id="search-key-input" placeholder="Search by key prefix..." value="${escapeHTML(searchInputValue)}">
-                    <button id="add-key-btn">Add Key</button>
-                 </div>
-            </div>
-            <div id="key-value-container">${keyTableHTML}</div>
-            <div class="pagination">
-                <button id="prev-page-btn" ${!hasPrevious ? 'disabled' : ''}>← Previous</button>
-                <button id="next-page-btn" ${!nextKey ? 'disabled' : ''}>Next →</button>
+        const topPaginationHTML = `
+            <div class="pagination pagination-top">
+                <button class="prev-page-btn" ${!hasPrevious ? 'disabled' : ''}>←</button>
+                <button class="next-page-btn" ${!nextKey ? 'disabled' : ''}>→</button>
             </div>`;
 
-        // Add event listeners for the newly rendered content
-        const prevBtn = document.getElementById('prev-page-btn');
-        if (prevBtn && paginationHistory.length > 0) {
-            prevBtn.addEventListener('click', () => {
-                const previousPage = paginationHistory.pop();
-                currentStartKey = previousPage.startKey;
-                currentPrefix = previousPage.prefix;
-                fetchAndDisplayKeys(dbName, { startKey: previousPage.startKey, prefix: previousPage.prefix });
-            });
-        }
+        const bottomPaginationHTML = `
+            <div class="pagination">
+                <button class="prev-page-btn" ${!hasPrevious ? 'disabled' : ''}>← Previous</button>
+                <button class="next-page-btn" ${!nextKey ? 'disabled' : ''}>Next →</button>
+            </div>`;
 
-        const nextBtn = document.getElementById('next-page-btn');
-        if (nextBtn && nextKey) {
-            nextBtn.addEventListener('click', () => fetchAndDisplayKeys(dbName, { startKey: nextKey, prefix: currentPrefix }));
-        }
+        dataViewElement.innerHTML = `
+            <div class="db-header">
+                <h3>${dbName}</h3>
+                <div class="db-actions">
+                    <input type="text" id="search-key-input" placeholder="Search by key prefix..." value="${escapeHTML(searchInputValue)}">
+                    <button id="add-key-btn">Add Key</button>
+                </div>
+            </div>
+            <div class="table-controls">
+                <span class="table-label">Keys</span>
+                ${topPaginationHTML}
+            </div>
+            <div id="key-value-container">${keyTableHTML}</div>
+            ${bottomPaginationHTML}`;
+
+        // Add event listeners for the newly rendered content
+        document.querySelectorAll('.prev-page-btn').forEach(prevBtn => {
+            if (paginationHistory.length > 0) {
+                prevBtn.addEventListener('click', () => {
+                    const previousPage = paginationHistory.pop();
+                    currentStartKey = previousPage.startKey;
+                    currentPrefix = previousPage.prefix;
+                    fetchAndDisplayKeys(dbName, { startKey: previousPage.startKey, prefix: previousPage.prefix });
+                });
+            }
+        });
+
+        document.querySelectorAll('.next-page-btn').forEach(nextBtn => {
+            if (nextKey) {
+                nextBtn.addEventListener('click', () => fetchAndDisplayKeys(dbName, { startKey: nextKey, prefix: currentPrefix }));
+            }
+        });
 
         const newSearchInput = document.getElementById('search-key-input');
         if (newSearchInput) {
