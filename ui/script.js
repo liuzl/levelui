@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Element Caching ---
+    const appContainer = document.getElementById('app-container');
     const dbListElement = document.getElementById('db-list');
     const welcomeMessageElement = document.getElementById('welcome-message');
     const dataViewElement = document.getElementById('data-view');
@@ -37,9 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPrefix = '';
 
     // --- Event Listeners ---
-    if (dbNavToggle && dbNav) {
+    if (dbNavToggle && appContainer) {
         dbNavToggle.addEventListener('click', () => {
-            dbNav.classList.toggle('collapsed');
+            appContainer.classList.toggle('nav-collapsed');
         });
     }
 
