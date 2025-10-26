@@ -188,6 +188,14 @@ main {
     white-space: nowrap;
 }
 
+/* Decorative icon before current DB name */
+.db-header h3::before {
+    content: "🧱"; /* card file box; easy to swap for 🗄️/🛢️/💾 */
+    display: inline-block;
+    margin-right: 8px;
+    line-height: 1;
+}
+
 .db-actions {
     display: flex;
     align-items: center;
