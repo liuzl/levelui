@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const DEBUG = false;
+    const dlog = (...args) => { if (DEBUG) console.log(...args); };
     // --- DOM Element Caching ---
     const appContainer = document.getElementById('app-container');
     const dbListElement = document.getElementById('db-list');
@@ -31,6 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let searchDebounceTimer;
     let isEditMode = false;
     let editingKey = null;
+    let keysAbortController = null;
+    let lastFocusBeforeView = null;
+    let lastFocusBeforeEdit = null;
+    let lastFocusBeforeConfirm = null;
 
     // Pagination state
     let paginationHistory = [];
@@ -39,28 +45,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Event Listeners ---
     if (dbNavToggle && appContainer) {
+        // Restore nav collapsed state
+        const savedCollapsed = localStorage.getItem('navCollapsed');
+        if (savedCollapsed === 'true') {
+            appContainer.classList.add('nav-collapsed');
+            dbNavToggle.setAttribute('aria-expanded', 'false');
+        } else {
+            dbNavToggle.setAttribute('aria-expanded', 'true');
+        }
+
         dbNavToggle.addEventListener('click', () => {
-            appContainer.classList.toggle('nav-collapsed');
+            const collapsed = appContainer.classList.toggle('nav-collapsed');
+            dbNavToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            localStorage.setItem('navCollapsed', String(collapsed));
         });
     }
 
     if (modal && modalCloseBtn) {
-        modalCloseBtn.addEventListener('click', () => modal.classList.add('hidden'));
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.classList.add('hidden');
+        const closeViewModal = () => {
+            modal.classList.add('hidden');
+            if (lastFocusBeforeView && typeof lastFocusBeforeView.focus === 'function') {
+                lastFocusBeforeView.focus();
+            }
+        };
+        modalCloseBtn.addEventListener('click', closeViewModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeViewModal(); });
+        // Add keyboard support
+        modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeViewModal();
         });
     }
 
     if (editModal && editModalCloseBtn) {
-        editModalCloseBtn.addEventListener('click', () => {
+        const closeEditModal = () => {
             editModal.classList.add('hidden');
             resetEditState();
-        });
-        editModal.addEventListener('click', (e) => {
-            if (e.target === editModal) {
-                editModal.classList.add('hidden');
-                resetEditState();
+            if (lastFocusBeforeEdit && typeof lastFocusBeforeEdit.focus === 'function') {
+                lastFocusBeforeEdit.focus();
             }
+        };
+        editModalCloseBtn.addEventListener('click', closeEditModal);
+        editModal.addEventListener('click', (e) => { if (e.target === editModal) closeEditModal(); });
+        editModal.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeEditModal();
         });
     }
 
@@ -69,30 +96,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (editFromViewBtn) {
-        editFromViewBtn.addEventListener('click', handleEditFromView);
+        editFromViewBtn.addEventListener('click', (e) => { lastFocusBeforeEdit = e.currentTarget; handleEditFromView(); });
     }
 
     if (confirmModal) {
-        confirmModalCloseBtn.addEventListener('click', () => {
+        const closeConfirm = () => {
             confirmModal.classList.add('hidden');
             confirmDeleteBtn.onclick = null; // Clear the handler
-        });
-        confirmCancelBtn.addEventListener('click', () => {
-            confirmModal.classList.add('hidden');
-            confirmDeleteBtn.onclick = null; // Clear the handler
-        });
+            if (lastFocusBeforeConfirm && typeof lastFocusBeforeConfirm.focus === 'function') {
+                lastFocusBeforeConfirm.focus();
+            }
+        };
+        confirmModalCloseBtn.addEventListener('click', closeConfirm);
+        confirmCancelBtn.addEventListener('click', closeConfirm);
         confirmModal.addEventListener('click', (e) => {
             if (e.target === confirmModal) {
-                confirmModal.classList.add('hidden');
-                confirmDeleteBtn.onclick = null; // Clear the handler
+                closeConfirm();
             }
         });
 
         // Add keyboard support
         confirmModal.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                confirmModal.classList.add('hidden');
-                confirmDeleteBtn.onclick = null; // Clear the handler
+                closeConfirm();
             } else if (e.key === 'Enter' && confirmDeleteBtn.onclick) {
                 // Only trigger delete if Enter is pressed and there's an active handler
                 confirmDeleteBtn.click();
@@ -104,7 +130,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchAndDisplayDBs() {
         try {
-            const response = await fetch('/api/dbs');
+            dbListElement.innerHTML = '<li style="color:#888;">Loading databases...</li>';
+            const response = await fetch(new URL('/api/dbs', window.location.origin), { credentials: 'same-origin' });
             if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
             const dbNames = await response.json();
 
@@ -116,9 +143,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             dbNames.forEach(name => {
                 const li = document.createElement('li');
-                li.textContent = name;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = name;
+                btn.setAttribute('aria-label', `Open database ${name}`);
+                btn.addEventListener('click', () => handleDbSelection(name, li));
                 li.dataset.dbName = name;
-                li.addEventListener('click', () => handleDbSelection(name, li));
+                li.appendChild(btn);
                 dbListElement.appendChild(li);
             });
         } catch (error) {
@@ -128,9 +159,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleDbSelection(dbName, liElement) {
-        if (activeDbLiElement) activeDbLiElement.classList.remove('active');
+        if (activeDbLiElement) {
+            activeDbLiElement.classList.remove('active');
+            const prevBtn = activeDbLiElement.querySelector('button');
+            if (prevBtn) prevBtn.removeAttribute('aria-current');
+        }
 
         liElement.classList.add('active');
+        const currentBtn = liElement.querySelector('button');
+        if (currentBtn) currentBtn.setAttribute('aria-current', 'true');
         activeDb = dbName;
         activeDbLiElement = liElement;
 
@@ -150,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = new URL(`/api/db/${dbName}/keys`, window.location.origin);
             if (options.startKey) url.searchParams.append('start', options.startKey);
             if (options.prefix) url.searchParams.append('prefix', options.prefix);
-            console.log(`[DEBUG] Fetching keys with URL: ${url}`);
+            dlog(`[DEBUG] Fetching keys with URL: ${url}`);
 
             // Update pagination state
             const newPrefix = options.prefix || '';
@@ -172,13 +209,26 @@ document.addEventListener('DOMContentLoaded', () => {
             currentPrefix = newPrefix;
             currentStartKey = newStartKey;
 
-            const response = await fetch(url);
+            // show loading if container present
+            const kvc = document.getElementById('key-value-container');
+            if (kvc) kvc.innerHTML = '<div class="empty-state">Loading keys...</div>';
+
+            if (keysAbortController) {
+                try { keysAbortController.abort(); } catch (_) {}
+            }
+            keysAbortController = new AbortController();
+
+            const response = await fetch(url, { signal: keysAbortController.signal, credentials: 'same-origin' });
             if (!response.ok) throw new Error(`API response was not ok: ${response.statusText}`);
 
             const data = await response.json();
-            console.log(`[DEBUG] Received data.keys.length: ${data.keys ? data.keys.length : 'null'}`);
+            dlog(`[DEBUG] Received data.keys.length: ${data.keys ? data.keys.length : 'null'}`);
             renderKeyView(dbName, data.keys || [], data.next_key, newPrefix, options.startKey);
         } catch (error) {
+            if (error.name === 'AbortError') {
+                dlog('Previous keys request aborted');
+                return;
+            }
             console.error(`Error fetching keys for ${dbName}:`, error);
             if (dataViewElement) dataViewElement.innerHTML = `<p style="color: #ff5555;">Error loading keys.</p>`;
         }
@@ -194,8 +244,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <tr>
                                 <td class="key-cell" title="${escapeHTML(keyStr)}">${escapeHTML(keyStr)}</td>
                                 <td>
-                                    <button class="action-btn" data-action="view" data-db="${dbName}" data-key="${escapeHTML(keyStr)}" title="View key"></button>
-                                    <button class="action-btn" data-action="delete" data-db="${dbName}" data-key="${escapeHTML(keyStr)}" title="Delete key"></button>
+                                    <button class="action-btn" data-action="view" data-db="${dbName}" data-key="${escapeHTML(keyStr)}" title="View key" aria-label="View key ${escapeHTML(keyStr)}"></button>
+                                    <button class="action-btn" data-action="delete" data-db="${dbName}" data-key="${escapeHTML(keyStr)}" title="Delete key" aria-label="Delete key ${escapeHTML(keyStr)}"></button>
                                 </td>
                             </tr>`).join('')}
                     </tbody>
@@ -214,13 +264,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const topPaginationHTML = `
             <div class="pagination pagination-top">
                 <button class="prev-page-btn" ${!hasPrevious ? 'disabled' : ''}>←</button>
-                <button class="next-page-btn" ${!nextKey ? 'disabled' : ''}>→</button>
+                <button class="next-page-btn" ${!nextKey ? 'disabled' : ''} ${nextKey ? `data-next-key="${escapeHTML(nextKey)}"` : ''}>→</button>
             </div>`;
 
         const bottomPaginationHTML = `
             <div class="pagination">
                 <button class="prev-page-btn" ${!hasPrevious ? 'disabled' : ''}>← Previous</button>
-                <button class="next-page-btn" ${!nextKey ? 'disabled' : ''}>Next →</button>
+                <button class="next-page-btn" ${!nextKey ? 'disabled' : ''} ${nextKey ? `data-next-key="${escapeHTML(nextKey)}"` : ''}>Next →</button>
             </div>`;
 
         dataViewElement.innerHTML = `
@@ -238,24 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <div id="key-value-container">${keyTableHTML}</div>
             ${bottomPaginationHTML}`;
 
-        // Add event listeners for the newly rendered content
-        document.querySelectorAll('.prev-page-btn').forEach(prevBtn => {
-            if (paginationHistory.length > 0) {
-                prevBtn.addEventListener('click', () => {
-                    const previousPage = paginationHistory.pop();
-                    currentStartKey = previousPage.startKey;
-                    currentPrefix = previousPage.prefix;
-                    fetchAndDisplayKeys(dbName, { startKey: previousPage.startKey, prefix: previousPage.prefix });
-                });
-            }
-        });
-
-        document.querySelectorAll('.next-page-btn').forEach(nextBtn => {
-            if (nextKey) {
-                nextBtn.addEventListener('click', () => fetchAndDisplayKeys(dbName, { startKey: nextKey, prefix: currentPrefix }));
-            }
-        });
-
         const newSearchInput = document.getElementById('search-key-input');
         if (newSearchInput) {
             // Restore focus if it was focused before
@@ -268,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             newSearchInput.addEventListener('input', (e) => {
-                console.log(`[DEBUG] Input event. activeDb: ${activeDb}, searchValue: "${e.target.value}"`);
+                dlog(`[DEBUG] Input event. activeDb: ${activeDb}, searchValue: "${e.target.value}"`);
                 clearTimeout(searchDebounceTimer);
                 searchDebounceTimer = setTimeout(() => {
                     if (!activeDb) return;
@@ -277,23 +309,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     fetchAndDisplayKeys(dbName, { prefix: e.target.value });
                 }, 300);
             });
+
+            // Enter to search immediately, Escape to clear
+            newSearchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    clearTimeout(searchDebounceTimer);
+                    paginationHistory = [];
+                    currentStartKey = null;
+                    fetchAndDisplayKeys(dbName, { prefix: e.target.value });
+                } else if (e.key === 'Escape') {
+                    if (newSearchInput.value) {
+                        newSearchInput.value = '';
+                        paginationHistory = [];
+                        currentStartKey = null;
+                        fetchAndDisplayKeys(dbName, { prefix: '' });
+                    }
+                }
+            });
         }
 
-        document.getElementById('add-key-btn').addEventListener('click', () => {
-            document.getElementById('edit-modal-title').textContent = 'Add New Key/Value';
-            editForm.reset();
-            editKeyElement.disabled = false;
-            isEditMode = false;
-            editingKey = null;
-            editModal.classList.remove('hidden');
-        });
-
-        document.querySelectorAll('.action-btn[data-action="view"]').forEach(btn => {
-            btn.addEventListener('click', e => handleViewKey(e.target.dataset.db, e.target.dataset.key));
-        });
-        document.querySelectorAll('.action-btn[data-action="delete"]').forEach(btn => {
-            btn.addEventListener('click', e => handleDeleteKey(e.target.dataset.db, e.target.dataset.key, e.target));
-        });
+        // Note: event handlers for actions are delegated globally (see below)
     }
 
     async function handleSetKey(e) {
@@ -305,9 +340,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!key) return alert('Key cannot be empty.');
 
         try {
-            const response = await fetch(`/api/db/${activeDb}/key`, {
+            const saveBtn = document.getElementById('save-kv-btn');
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+            const url = new URL(`/api/db/${activeDb}/key`, window.location.origin);
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
                 body: JSON.stringify({ key, value }),
             });
 
@@ -331,9 +370,14 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error setting key:', error);
             alert('Could not save key-value pair. See console for details.');
         }
+        finally {
+            const saveBtn = document.getElementById('save-kv-btn');
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
+        }
     }
 
     async function handleDeleteKey(dbName, key, buttonElement) {
+        lastFocusBeforeConfirm = buttonElement;
         confirmModalText.textContent = `Are you sure you want to delete the key "${key}"? This action cannot be undone.`;
         confirmModal.classList.remove('hidden');
 
@@ -346,7 +390,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 confirmDeleteBtn.disabled = true;
                 confirmDeleteBtn.textContent = 'Deleting...';
 
-                const response = await fetch(`/api/db/${dbName}/key/${encodeURIComponent(key)}`, { method: 'DELETE' });
+                const url = new URL(`/api/db/${dbName}/key/${encodeURIComponent(key)}`, window.location.origin);
+                const response = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
 
                 if (response.status === 204) {
                     const row = buttonElement.closest('tr');
@@ -368,7 +413,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleViewKey(dbName, key) {
         try {
-            const response = await fetch(`/api/db/${dbName}/key/${encodeURIComponent(key)}`);
+            const url = new URL(`/api/db/${dbName}/key/${encodeURIComponent(key)}`, window.location.origin);
+            const response = await fetch(url, { credentials: 'same-origin' });
             if (!response.ok) throw new Error(`API Error: ${response.status} ${await response.text()}`);
 
             const data = await response.json();
@@ -376,6 +422,8 @@ document.addEventListener('DOMContentLoaded', () => {
             modalValueElement.textContent = data.value;
             editingKey = data.key;
             modal.classList.remove('hidden');
+            const focusTarget = modal.querySelector('.modal-content');
+            if (focusTarget && typeof focusTarget.focus === 'function') focusTarget.focus();
         } catch (error) {
             console.error('Error fetching key value:', error);
             alert('Could not load key value. See console for details.');
@@ -400,6 +448,8 @@ document.addEventListener('DOMContentLoaded', () => {
         editKeyElement.disabled = true;
 
         isEditMode = true;
+        const focusTarget = editModal.querySelector('.modal-content');
+        if (focusTarget && typeof focusTarget.focus === 'function') focusTarget.focus();
     }
 
     function resetEditState() {
@@ -419,4 +469,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Initial Load ---
     fetchAndDisplayDBs();
+
+    // Delegated events for actions within data view
+    if (dataViewElement) {
+        dataViewElement.addEventListener('click', (e) => {
+            const actionBtn = e.target.closest('.action-btn');
+            if (actionBtn) {
+                const action = actionBtn.dataset.action;
+                const db = actionBtn.dataset.db;
+                const key = actionBtn.dataset.key;
+                if (action === 'view') {
+                    lastFocusBeforeView = e.target;
+                    handleViewKey(db, key);
+                } else if (action === 'delete') {
+                    handleDeleteKey(db, key, actionBtn);
+                }
+                return;
+            }
+
+            const addKeyBtn = e.target.closest('#add-key-btn');
+            if (addKeyBtn) {
+                lastFocusBeforeEdit = addKeyBtn;
+                document.getElementById('edit-modal-title').textContent = 'Add New Key/Value';
+                editForm.reset();
+                editKeyElement.disabled = false;
+                isEditMode = false;
+                editingKey = null;
+                editModal.classList.remove('hidden');
+                const focusTarget = editModal.querySelector('.modal-content');
+                if (focusTarget && typeof focusTarget.focus === 'function') focusTarget.focus();
+                return;
+            }
+
+            const prevBtn = e.target.closest('.prev-page-btn');
+            if (prevBtn && !prevBtn.disabled && paginationHistory.length > 0) {
+                const previousPage = paginationHistory.pop();
+                currentStartKey = previousPage.startKey;
+                currentPrefix = previousPage.prefix;
+                fetchAndDisplayKeys(activeDb, { startKey: previousPage.startKey, prefix: previousPage.prefix });
+                return;
+            }
+
+            const nextBtn = e.target.closest('.next-page-btn');
+            if (nextBtn && !nextBtn.disabled) {
+                const nk = nextBtn.getAttribute('data-next-key');
+                fetchAndDisplayKeys(activeDb, { startKey: nk, prefix: currentPrefix });
+                return;
+            }
+        });
+    }
 });

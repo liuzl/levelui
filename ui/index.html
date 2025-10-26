@@ -7,19 +7,10 @@
     <meta name="color-scheme" content="dark light">
     <meta name="theme-color" content="#1e1e1e">
     <title>LevelUI</title>
-    <link rel="stylesheet" href="style.css?v=1.1.4">
-    <style>
-      /* Only reveal skip link when focused for keyboard users */
-      .skip-link:focus { 
-        position: static !important; left: auto !important; top: auto !important; 
-        width: auto !important; height: auto !important; overflow: visible !important;
-        display: inline-block; padding: 0.4rem 0.75rem; background: #ffffff; color: #000; 
-        border-radius: 4px; margin: 0.5rem; z-index: 1001;
-      }
-    </style>
+    <link rel="stylesheet" href="style.css?v=1.1.5">
 </head>
 <body>
-    <a href="#main-content" class="skip-link" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Skip to content</a>
+    <a href="#main-content" class="skip-link visually-hidden">Skip to content</a>
     <header>
         <h1>LevelUI</h1>
     </header>
@@ -33,7 +24,7 @@
                     <!-- Database names will be dynamically injected here by script.js -->
                 </ul>
             </nav>
-            <button id="db-nav-toggle" class="nav-toggle-btn" aria-label="Toggle databases list" title="Toggle databases list">
+            <button id="db-nav-toggle" class="nav-toggle-btn" aria-label="Toggle databases list" title="Toggle databases list" aria-controls="db-nav" aria-expanded="true">
                 <span class="toggle-icon">«</span>
             </button>
             <section id="db-view" aria-live="polite">

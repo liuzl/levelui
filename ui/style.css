@@ -14,6 +14,16 @@
     --nav-width: 240px;
 }
 
+/* Visually hidden utility, but focusable via :focus styles */
+.visually-hidden {
+    position: absolute !important;
+    left: -9999px !important;
+    top: auto !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -129,21 +139,22 @@ main {
     list-style: none;
 }
 
-#db-list li {
+#db-list li { margin-bottom: 2px; }
+#db-list li button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: transparent;
+    color: #3c4043;
+    font-weight: 500;
     padding: 6px 10px;
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
-    margin-bottom: 2px;
-    font-weight: 500;
-    color: #3c4043;
 }
-
-#db-list li:hover {
-    background-color: var(--hover-bg-color);
-}
-
-#db-list li.active {
+#db-list li button:hover { background-color: var(--hover-bg-color); }
+#db-list li.active button {
     background-color: var(--active-bg-color);
     color: var(--primary-color);
     font-weight: 600;
@@ -163,8 +174,12 @@ main {
     align-items: center;
     gap: 1rem;
     margin-bottom: 8px;
-    margin-left: 30px;
     flex-shrink: 0;
+}
+
+/* When nav is collapsed, offset the content header to avoid overlap with the toggle button */
+#app-container.nav-collapsed .db-header {
+    margin-left: 40px;
 }
 
 .db-header h3 {
@@ -448,7 +463,7 @@ main {
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     font-size: 0.85rem;
     color: var(--text-color);
-    resize: none; /* Prevent manual resizing */
+    resize: vertical;
 }
 .kv-pair textarea:focus {
     outline: none;
@@ -524,6 +539,17 @@ button {
 }
 button:active {
     transform: translateY(1px);
+}
+
+/* Focus-visible styles for better keyboard a11y */
+.nav-toggle-btn:focus-visible,
+#db-list li button:focus-visible,
+.action-btn:focus-visible,
+.pagination button:focus-visible,
+.modal-close:focus-visible,
+button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary-color);
 }
 
 /* Hidden class */
