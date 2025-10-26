@@ -258,19 +258,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const searchInputFocused = searchInput && document.activeElement === searchInput;
         const searchCursorPosition = searchInput ? searchInput.selectionStart : 0;
 
-        // Determine if Previous button should be enabled
+        // Determine if Previous/Next buttons should be enabled
         const hasPrevious = paginationHistory.length > 0;
+        const canNext = Boolean(nextKey) && keys.length > 0;
 
         const topPaginationHTML = `
             <div class="pagination pagination-top">
                 <button class="prev-page-btn" ${!hasPrevious ? 'disabled' : ''}>←</button>
-                <button class="next-page-btn" ${!nextKey ? 'disabled' : ''} ${nextKey ? `data-next-key="${escapeHTML(nextKey)}"` : ''}>→</button>
+                <button class="next-page-btn" ${!canNext ? 'disabled' : ''} ${canNext ? `data-next-key="${escapeHTML(nextKey)}"` : ''}>→</button>
             </div>`;
 
         const bottomPaginationHTML = `
             <div class="pagination">
                 <button class="prev-page-btn" ${!hasPrevious ? 'disabled' : ''}>← Previous</button>
-                <button class="next-page-btn" ${!nextKey ? 'disabled' : ''} ${nextKey ? `data-next-key="${escapeHTML(nextKey)}"` : ''}>Next →</button>
+                <button class="next-page-btn" ${!canNext ? 'disabled' : ''} ${canNext ? `data-next-key="${escapeHTML(nextKey)}"` : ''}>Next →</button>
             </div>`;
 
         dataViewElement.innerHTML = `
